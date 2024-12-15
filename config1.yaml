@@ -1,0 +1,14 @@
+ips:
+  - ip: 192.168.20.133
+    user: root
+    password: "root"
+    port: 22
+    role: XXX_prod
+  - ip: 192.168.20.131
+    user: slice
+    password: "slice"
+    port: 22
+    role: ops
+log:
+  level: "debug"
+  file: "ops_cli.log" 

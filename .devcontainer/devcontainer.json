@@ -1,0 +1,17 @@
+{
+    "name": "Golang Development",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": "."
+    },
+    "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+    },
+    "extensions": [
+        "golang.Go"
+    ],
+    "forwardPorts": [
+        18022
+    ],
+    "remoteUser": "developer"
+}

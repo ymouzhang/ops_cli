@@ -1,0 +1,14 @@
+ips:
+  - ip: 192.168.20.133
+    user: aaron
+    password: "    "
+    port: 22
+    role: fp
+  - ip: 192.168.20.133
+    user: aaron
+    password: "    "
+    port: 22
+    role: ops
+log:
+  level: "debug"
+  file: "ops_cli.log" 
