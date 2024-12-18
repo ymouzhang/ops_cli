@@ -9,6 +9,13 @@ ips:
     password: "    "
     port: 22
     role: ops
+
+port:
+  ops: 9090
+  general: 80
+  grafana: 3000
+  pushgateway: 9091
+
 log:
   level: "debug"
   file: "ops_cli.log"
