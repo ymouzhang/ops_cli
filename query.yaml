@@ -1,0 +1,36 @@
+query:
+  query_time: "2024-12-18 23:23:00"
+  ops:
+    port: 9090
+    promql:
+    - name: "cpu使用率"
+      query: "sum(node_cpu_seconds_total{mode='system'})"
+    - name: "内存使用率"
+      query: "sum(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)"
+    - name: "up"
+      query: "up"
+  general:
+    port: 9090
+    promql:
+    - name: "cpu使用率"
+      query: "sum(node_cpu_seconds_total{mode='system'})"
+    - name: "内存使用率"
+      query: "sum(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)"
+
+query_range:
+  start: "2024-12-18 23:22:00"
+  end: "2024-12-18 23:23:00"
+  ops:
+    port: 9090
+    promql:
+    - name: "cpu使用率"
+      query: "sum(node_cpu_seconds_total{mode='system'})"
+    - name: "内存使用率"
+      query: "sum(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)"
+  general:
+    port: 9090
+    promql:
+    - name: "cpu使用率"
+      query: "sum(node_cpu_seconds_total{mode='system'})"
+    - name: "内存使用率"
+      query: "sum(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)"

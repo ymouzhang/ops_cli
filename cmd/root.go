@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 	"ops_cli/cmd/check"
+	"ops_cli/cmd/query"
 	"ops_cli/internal/config"
 	"ops_cli/pkg/log"
 )
@@ -31,6 +32,6 @@ func init() {
 	rootCmd.SuggestionsMinimumDistance = 1
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file path")
 
-	// Add commands
 	rootCmd.AddCommand(check.Cmd)
+	rootCmd.AddCommand(query.Cmd)
 }

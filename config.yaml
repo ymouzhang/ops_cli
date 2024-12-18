@@ -11,4 +11,4 @@ ips:
     role: ops
 log:
   level: "debug"
-  file: "ops_cli.log" 
+  file: "ops_cli.log"
