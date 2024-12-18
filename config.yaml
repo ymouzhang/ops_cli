@@ -11,10 +11,14 @@ ips:
     role: ops
 
 port:
-  ops: 9090
-  general: 80
-  grafana: 3000
-  pushgateway: 9091
+  default:
+    prometheus: 9090
+    grafana: 3000
+    pushgateway: 9091
+  ops:
+    prometheus: 32190
+    grafana: 32123
+    pushgateway: 32191
 
 log:
   level: "debug"

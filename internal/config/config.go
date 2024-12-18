@@ -7,8 +7,9 @@ import (
 )
 
 type Config struct {
-	IPs []IPConfig `mapstructure:"ips"`
-	Log LogConfig  `mapstructure:"log"`
+	IPs  []IPConfig `mapstructure:"ips"`
+	Port PortConfig `mapstructure:"port"`
+	Log  LogConfig  `mapstructure:"log"`
 }
 
 type IPConfig struct {
@@ -17,6 +18,17 @@ type IPConfig struct {
 	Password string `mapstructure:"password"`
 	Port     int    `mapstructure:"port"`
 	Role     string `mapstructure:"role"`
+}
+
+type PortConfig struct {
+	Default PortDetail `mapstructure:"default"`
+	Ops     PortDetail `mapstructure:"ops"`
+}
+
+type PortDetail struct {
+	Prometheus  int `mapstructure:"prometheus"`
+	Grafana     int `mapstructure:"grafana"`
+	Pushgateway int `mapstructure:"pushgateway"`
 }
 
 type LogConfig struct {
@@ -48,26 +60,28 @@ func GetConfig() *Config {
 }
 
 func GetPort(role string, component string) (int, error) {
-	defaultPorts := map[string]int{
-		"prometheus":  9090,
-		"grafana":     3000,
-		"pushgateway": 9091,
-	}
-
 	if role == "ops" {
 		switch component {
 		case "prometheus":
-			return 32190, nil
+			return globalConfig.Port.Ops.Prometheus, nil
 		case "grafana":
-			return 32123, nil
+			return globalConfig.Port.Ops.Grafana, nil
 		case "pushgateway":
-			return 32191, nil
+			return globalConfig.Port.Ops.Pushgateway, nil
+		default:
+			return 0, fmt.Errorf("unknown component: %s", component)
 		}
 	}
 
-	if port, exists := defaultPorts[component]; exists {
-		return port, nil
+	// Default ports
+	switch component {
+	case "prometheus":
+		return globalConfig.Port.Default.Prometheus, nil
+	case "grafana":
+		return globalConfig.Port.Default.Grafana, nil
+	case "pushgateway":
+		return globalConfig.Port.Default.Pushgateway, nil
+	default:
+		return 0, fmt.Errorf("unknown component: %s", component)
 	}
-
-	return 0, fmt.Errorf("unknown component: %s", component)
 }
