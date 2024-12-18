@@ -24,8 +24,8 @@ type QueryRangeChecker struct {
 }
 
 func NewQueryRangeChecker(cfg *config.Config) *QueryRangeChecker {
-	generalPort, generalQueries, start, end := loadQueries("query.yaml", "query_range", "general")
-	opsPort, opsQueries, _, _ := loadQueries("query.yaml", "query_range", "ops")
+	generalPort, generalQueries, start, end := loadQueries("query_range", "general")
+	opsPort, opsQueries, _, _ := loadQueries("query_range", "ops")
 
 	return &QueryRangeChecker{
 		config:         cfg,

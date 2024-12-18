@@ -23,8 +23,8 @@ type QueryChecker struct {
 }
 
 func NewQueryChecker(cfg *config.Config) *QueryChecker {
-	generalPort, generalQueries, queryTime, _ := loadQueries("query.yaml", "query", "general")
-	opsPort, opsQueries, _, _ := loadQueries("query.yaml", "query", "ops")
+	generalPort, generalQueries, queryTime, _ := loadQueries("query", "general")
+	opsPort, opsQueries, _, _ := loadQueries("query", "ops")
 	return &QueryChecker{
 		config:         cfg,
 		client:         &http.Client{Timeout: 10 * time.Second},

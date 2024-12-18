@@ -26,6 +26,10 @@ func (m *Manager) registerCheckers() {
 }
 
 func (m *Manager) Check(queryType string) []checker.CheckResult {
+	if queryType == "all" {
+		return m.checkAll()
+	}
+
 	if checker, ok := m.checkers[queryType]; ok {
 		return checker.Check()
 	}
@@ -33,6 +37,14 @@ func (m *Manager) Check(queryType string) []checker.CheckResult {
 	return []checker.CheckResult{{
 		Component: queryType,
 		Status:    "Failed",
-		Message:   "Invalid query type. Use 'query' or 'query_range'",
+		Message:   "Unknown query type, please exec './ops_cli query --help' for more information",
 	}}
+}
+
+func (m *Manager) checkAll() []checker.CheckResult {
+	var results []checker.CheckResult
+	for _, checker := range m.checkers {
+		results = append(results, checker.Check()...)
+	}
+	return results
 }
