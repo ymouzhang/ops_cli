@@ -37,7 +37,7 @@ func (m *Manager) Check(queryType string) []checker.CheckResult {
 	return []checker.CheckResult{{
 		Component: queryType,
 		Status:    "Failed",
-		Message:   "Unknown query type, please exec './ops_cli query --help' for more information",
+		Message:   "Invalid query type. Use 'query', 'query_range', or 'all'",
 	}}
 }
 

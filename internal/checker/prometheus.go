@@ -37,15 +37,14 @@ func (p *PrometheusChecker) Check() []CheckResult {
 
 func (p *PrometheusChecker) checkHealth(ip config.IPConfig) CheckResult {
 	log.Info("Checking Prometheus health for %s", ip.IP)
-	port, err := config.GetPort(ip.Role, p.Name())
+
+	baseUrl, err := config.GetUrl(ip.IP, ip.Role, config.ComponentPrometheus, config.PathHealth)
 	if err != nil {
-		return p.createFailedResult("API Health", ip, "Failed to get port for Prometheus", err)
+		return p.createFailedResult("API Health", ip, "Failed to get base url", err)
 	}
+	log.Debug("Making HTTP request to %s with timeout %v", baseUrl, p.client.Timeout)
 
-	url := fmt.Sprintf("http://%s:%d/-/healthy", ip.IP, port)
-	log.Debug("Making HTTP request to %s with timeout %v", url, p.client.Timeout)
-
-	resp, err := p.client.Get(url)
+	resp, err := p.client.Get(baseUrl)
 	result := p.createBaseResult("API Health", ip)
 
 	if err != nil {
@@ -53,7 +52,7 @@ func (p *PrometheusChecker) checkHealth(ip config.IPConfig) CheckResult {
 	}
 	defer resp.Body.Close()
 
-	log.Debug("Response from %s - Status: %d, Headers: %v", url, resp.StatusCode, resp.Header)
+	log.Debug("Response from %s - Status: %d, Headers: %v", baseUrl, resp.StatusCode, resp.Header)
 
 	if resp.StatusCode != http.StatusOK {
 		return p.createFailedResult("API Health", ip, fmt.Sprintf("API returned status code %d", resp.StatusCode), nil)
@@ -69,15 +68,14 @@ func (p *PrometheusChecker) checkHealth(ip config.IPConfig) CheckResult {
 
 func (p *PrometheusChecker) checkTargets(ip config.IPConfig) CheckResult {
 	log.Info("Checking Prometheus targets for %s", ip.IP)
-	port, err := config.GetPort(ip.Role, p.Name())
+
+	baseUrl, err := config.GetUrl(ip.IP, ip.Role, config.ComponentPrometheus, config.PathTargets)
 	if err != nil {
-		return p.createFailedResult("Targets Status", ip, "Failed to get port for Prometheus", err)
+		return p.createFailedResult("Targets Status", ip, "Failed to get base url", err)
 	}
+	log.Debug("Fetching targets from %s", baseUrl)
 
-	url := fmt.Sprintf("http://%s:%d/api/v1/targets", ip.IP, port)
-	log.Debug("Fetching targets from %s", url)
-
-	resp, err := p.client.Get(url)
+	resp, err := p.client.Get(baseUrl)
 	result := p.createBaseResult("Targets Status", ip)
 
 	if err != nil {
@@ -102,12 +100,12 @@ func (p *PrometheusChecker) checkTargets(ip config.IPConfig) CheckResult {
 
 func (p *PrometheusChecker) checkFederation(ip config.IPConfig) CheckResult {
 	log.Info("Checking Prometheus federation for %s", ip.IP)
-	port, err := config.GetPort(ip.Role, p.Name())
-	if err != nil {
-		return p.createFailedResult("Federation Status", ip, "Failed to get port for Prometheus", err)
-	}
 
-	url := fmt.Sprintf("http://%s:%d/federate?match[]=up", ip.IP, port)
+	baseUrl, err := config.GetUrl(ip.IP, ip.Role, config.ComponentPrometheus, config.PathFederate)
+	if err != nil {
+		return p.createFailedResult("Federation Status", ip, "Failed to get base url", err)
+	}
+	url := fmt.Sprintf("%s?match[]=up", baseUrl)
 	log.Debug("Fetching federation data from %s", url)
 
 	resp, err := p.client.Get(url)

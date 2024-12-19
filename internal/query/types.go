@@ -68,13 +68,13 @@ func GetQueryRangeConfig(role string) (QueryConfig, string, string) {
 	return globalConfig.QueryRange.General, globalConfig.QueryRange.Start, globalConfig.QueryRange.End
 }
 
-func loadQueries(section, role string) (int, []PrometheusQuery, string, string) {
+func loadQueries(section, role string) ([]PrometheusQuery, string, string) {
 	if section == "query" {
 		cfg, queryTime := GetQueryConfig(role)
-		return cfg.Port, cfg.PromQL, queryTime, ""
+		return cfg.PromQL, queryTime, ""
 	} else if section == "query_range" {
 		cfg, start, end := GetQueryRangeConfig(role)
-		return cfg.Port, cfg.PromQL, start, end
+		return cfg.PromQL, start, end
 	}
-	return 0, nil, "", ""
+	return nil, "", ""
 }

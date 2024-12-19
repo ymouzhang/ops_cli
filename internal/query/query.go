@@ -15,21 +15,17 @@ import (
 type QueryChecker struct {
 	config         *config.Config
 	client         *http.Client
-	generalPort    int
-	opsPort        int
 	generalQueries []PrometheusQuery
 	opsQueries     []PrometheusQuery
 	queryTime      string
 }
 
 func NewQueryChecker(cfg *config.Config) *QueryChecker {
-	generalPort, generalQueries, queryTime, _ := loadQueries("query", "general")
-	opsPort, opsQueries, _, _ := loadQueries("query", "ops")
+	generalQueries, queryTime, _ := loadQueries("query", "general")
+	opsQueries, _, _ := loadQueries("query", "ops")
 	return &QueryChecker{
 		config:         cfg,
 		client:         &http.Client{Timeout: 10 * time.Second},
-		generalPort:    generalPort,
-		opsPort:        opsPort,
 		generalQueries: generalQueries,
 		opsQueries:     opsQueries,
 		queryTime:      queryTime,
@@ -46,11 +42,11 @@ func (q *QueryChecker) Check() []checker.CheckResult {
 	for _, ip := range q.config.IPs {
 		if ip.Role == "ops" {
 			for _, query := range q.opsQueries {
-				results = append(results, q.checkQuery(ip, query, q.opsPort))
+				results = append(results, q.checkQuery(ip, query))
 			}
 		} else {
 			for _, query := range q.generalQueries {
-				results = append(results, q.checkQuery(ip, query, q.generalPort))
+				results = append(results, q.checkQuery(ip, query))
 			}
 		}
 	}
@@ -58,7 +54,7 @@ func (q *QueryChecker) Check() []checker.CheckResult {
 	return results
 }
 
-func (q *QueryChecker) checkQuery(ip config.IPConfig, query PrometheusQuery, port int) checker.CheckResult {
+func (q *QueryChecker) checkQuery(ip config.IPConfig, query PrometheusQuery) checker.CheckResult {
 	log.Info("Checking Prometheus query for %s", ip.IP)
 
 	// Parse the queryTime into a time.Time object
@@ -68,10 +64,14 @@ func (q *QueryChecker) checkQuery(ip config.IPConfig, query PrometheusQuery, por
 	}
 
 	// Convert the time to Unix timestamp
-	unixTime := parsedTime.UnixNano() / int64(time.Second) // Convert to seconds
+	unixTime := parsedTime.UnixNano() / int64(time.Second)
 
 	encodedQuery := url.QueryEscape(query.Query)
-	url := fmt.Sprintf("http://%s:%d/api/v1/query?query=%s&time=%d", ip.IP, port, encodedQuery, unixTime)
+	baseUrl, err := config.GetUrl(ip.IP, ip.Role, config.ComponentPrometheus, config.PathQuery)
+	if err != nil {
+		return q.createFailedResult(query.Name, ip, "Failed to get base url", err)
+	}
+	url := fmt.Sprintf("%s?query=%s&time=%d", baseUrl, encodedQuery, unixTime)
 	log.Info("Making HTTP request to %s with timeout %v", url, q.client.Timeout)
 
 	resp, err := q.client.Get(url)

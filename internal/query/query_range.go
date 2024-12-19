@@ -15,8 +15,6 @@ import (
 type QueryRangeChecker struct {
 	config         *config.Config
 	client         *http.Client
-	generalPort    int
-	opsPort        int
 	generalQueries []PrometheusQuery
 	opsQueries     []PrometheusQuery
 	start          string
@@ -24,14 +22,12 @@ type QueryRangeChecker struct {
 }
 
 func NewQueryRangeChecker(cfg *config.Config) *QueryRangeChecker {
-	generalPort, generalQueries, start, end := loadQueries("query_range", "general")
-	opsPort, opsQueries, _, _ := loadQueries("query_range", "ops")
+	generalQueries, start, end := loadQueries("query_range", "general")
+	opsQueries, _, _ := loadQueries("query_range", "ops")
 
 	return &QueryRangeChecker{
 		config:         cfg,
 		client:         &http.Client{Timeout: 10 * time.Second},
-		generalPort:    generalPort,
-		opsPort:        opsPort,
 		generalQueries: generalQueries,
 		opsQueries:     opsQueries,
 		start:          start,
@@ -50,11 +46,11 @@ func (qr *QueryRangeChecker) Check() []checker.CheckResult {
 		log.Info("Checking Prometheus query range for %s", ip.IP)
 		if ip.Role == "ops" {
 			for _, query := range qr.opsQueries {
-				results = append(results, qr.checkQueryRange(ip, query, qr.opsPort))
+				results = append(results, qr.checkQueryRange(ip, query))
 			}
 		} else {
 			for _, query := range qr.generalQueries {
-				results = append(results, qr.checkQueryRange(ip, query, qr.generalPort))
+				results = append(results, qr.checkQueryRange(ip, query))
 			}
 		}
 	}
@@ -62,7 +58,7 @@ func (qr *QueryRangeChecker) Check() []checker.CheckResult {
 	return results
 }
 
-func (qr *QueryRangeChecker) checkQueryRange(ip config.IPConfig, query PrometheusQuery, port int) checker.CheckResult {
+func (qr *QueryRangeChecker) checkQueryRange(ip config.IPConfig, query PrometheusQuery) checker.CheckResult {
 	log.Info("Checking Prometheus query range for %s", ip.IP)
 
 	// Parse the start and end times into time.Time objects
@@ -76,11 +72,15 @@ func (qr *QueryRangeChecker) checkQueryRange(ip config.IPConfig, query Prometheu
 	}
 
 	// Convert the times to Unix timestamps
-	unixStart := parsedStart.UnixNano() / int64(time.Second) // Convert to seconds
-	unixEnd := parsedEnd.UnixNano() / int64(time.Second)     // Convert to seconds
+	unixStart := parsedStart.UnixNano() / int64(time.Second)
+	unixEnd := parsedEnd.UnixNano() / int64(time.Second)
 
 	encodedQuery := url.QueryEscape(query.Query)
-	url := fmt.Sprintf("http://%s:%d/api/v1/query_range?query=%s&start=%d&end=%d&step=60s", ip.IP, port, encodedQuery, unixStart, unixEnd)
+	baseUrl, err := config.GetUrl(ip.IP, ip.Role, config.ComponentPrometheus, config.PathQueryRange)
+	if err != nil {
+		return qr.createFailedResult(query.Name, ip, "Failed to get base url", err)
+	}
+	url := fmt.Sprintf("%s?query=%s&start=%d&end=%d&step=60s", baseUrl, encodedQuery, unixStart, unixEnd)
 	log.Info("Making HTTP request to %s with timeout %v", url, qr.client.Timeout)
 
 	resp, err := qr.client.Get(url)
