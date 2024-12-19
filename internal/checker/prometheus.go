@@ -17,7 +17,7 @@ type PrometheusChecker struct {
 func NewPrometheusChecker(cfg *config.Config) *PrometheusChecker {
 	return &PrometheusChecker{
 		config: cfg,
-		client: &http.Client{Timeout: 5 * time.Second},
+		client: &http.Client{Timeout: 60 * time.Second},
 	}
 }
 

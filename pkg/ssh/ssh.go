@@ -32,7 +32,7 @@ func (c *Client) Connect() error {
 			ssh.Password(c.password),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         5 * time.Second,
+		Timeout:         60 * time.Second,
 	}
 
 	addr := fmt.Sprintf("%s:%d", c.host, c.port)

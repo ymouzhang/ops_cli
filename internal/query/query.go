@@ -25,7 +25,7 @@ func NewQueryChecker(cfg *config.Config) *QueryChecker {
 	opsQueries, _, _ := loadQueries("query", "ops")
 	return &QueryChecker{
 		config:         cfg,
-		client:         &http.Client{Timeout: 10 * time.Second},
+		client:         &http.Client{Timeout: 60 * time.Second},
 		generalQueries: generalQueries,
 		opsQueries:     opsQueries,
 		queryTime:      queryTime,

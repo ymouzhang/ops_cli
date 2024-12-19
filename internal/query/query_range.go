@@ -17,21 +17,24 @@ type QueryRangeChecker struct {
 	client         *http.Client
 	generalQueries []PrometheusQuery
 	opsQueries     []PrometheusQuery
-	start          string
-	end            string
+	start          time.Time
+	end            time.Time
 }
 
 func NewQueryRangeChecker(cfg *config.Config) *QueryRangeChecker {
 	generalQueries, start, end := loadQueries("query_range", "general")
 	opsQueries, _, _ := loadQueries("query_range", "ops")
 
+	parsedStart, _ := time.ParseInLocation("2006-01-02 15:04:05", start, time.FixedZone("CST", 8*3600))
+	parsedEnd, _ := time.ParseInLocation("2006-01-02 15:04:05", end, time.FixedZone("CST", 8*3600))
+
 	return &QueryRangeChecker{
 		config:         cfg,
-		client:         &http.Client{Timeout: 10 * time.Second},
+		client:         &http.Client{Timeout: 60 * time.Second},
 		generalQueries: generalQueries,
 		opsQueries:     opsQueries,
-		start:          start,
-		end:            end,
+		start:          parsedStart,
+		end:            parsedEnd,
 	}
 }
 
@@ -44,14 +47,12 @@ func (qr *QueryRangeChecker) Check() []checker.CheckResult {
 
 	for _, ip := range qr.config.IPs {
 		log.Info("Checking Prometheus query range for %s", ip.IP)
+		queries := qr.generalQueries
 		if ip.Role == "ops" {
-			for _, query := range qr.opsQueries {
-				results = append(results, qr.checkQueryRange(ip, query))
-			}
-		} else {
-			for _, query := range qr.generalQueries {
-				results = append(results, qr.checkQueryRange(ip, query))
-			}
+			queries = qr.opsQueries
+		}
+		for _, query := range queries {
+			results = append(results, qr.checkQueryRange(ip, query))
 		}
 	}
 
@@ -61,19 +62,8 @@ func (qr *QueryRangeChecker) Check() []checker.CheckResult {
 func (qr *QueryRangeChecker) checkQueryRange(ip config.IPConfig, query PrometheusQuery) checker.CheckResult {
 	log.Info("Checking Prometheus query range for %s", ip.IP)
 
-	// Parse the start and end times into time.Time objects
-	parsedStart, err := time.ParseInLocation("2006-01-02 15:04:05", qr.start, time.FixedZone("CST", 8*3600))
-	if err != nil {
-		return qr.createFailedResult(query.Name, ip, "Failed to parse start time", err)
-	}
-	parsedEnd, err := time.ParseInLocation("2006-01-02 15:04:05", qr.end, time.FixedZone("CST", 8*3600))
-	if err != nil {
-		return qr.createFailedResult(query.Name, ip, "Failed to parse end time", err)
-	}
-
-	// Convert the times to Unix timestamps
-	unixStart := parsedStart.UnixNano() / int64(time.Second)
-	unixEnd := parsedEnd.UnixNano() / int64(time.Second)
+	unixStart := qr.start.Unix()
+	unixEnd := qr.end.Unix()
 
 	encodedQuery := url.QueryEscape(query.Query)
 	baseUrl, err := config.GetUrl(ip.IP, ip.Role, config.ComponentPrometheus, config.PathQueryRange)
@@ -117,7 +107,6 @@ func (qr *QueryRangeChecker) checkQueryRange(ip config.IPConfig, query Prometheu
 
 	if len(jsonResponse.Data.Result) > 0 && len(jsonResponse.Data.Result[0].Values) > 0 {
 		result.Status = "Passed"
-		// Get the latest value from the time series
 		lastValue := jsonResponse.Data.Result[0].Values[len(jsonResponse.Data.Result[0].Values)-1]
 		if len(lastValue) > 1 {
 			result.Message = fmt.Sprintf("%v", lastValue[1])
@@ -130,7 +119,7 @@ func (qr *QueryRangeChecker) checkQueryRange(ip config.IPConfig, query Prometheu
 		result.Message = "No data returned"
 	}
 
-	log.Info("Prometheus query range check passed for %s", ip.IP)
+	log.Info("Prometheus query range check completed for %s", ip.IP)
 
 	return result
 }
